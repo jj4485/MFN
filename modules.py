@@ -367,7 +367,7 @@ class GaussianFilter(nn.Module):
 
 
 class AllModels(nn.Module):
-    def __init__(self, sidelen, hidden_dim, hidden_layers, n_data, gt_rotations=None, g_dist=None, apix=None, gabor=False):
+    def __init__(self, sidelen, hidden_dim, hidden_layers, n_data, gt_rotations=None, g_dist=None, apix=None): #got rid of the gabor here
         super(AllModels, self).__init__()
         self.model = FrequencyMarchingBACON(in_size=3, 
                                             hidden_size=hidden_dim, 
@@ -377,7 +377,6 @@ class AllModels(nn.Module):
                                             frequency=(sidelen, sidelen, sidelen), 
                                             lambdas=(0.3, 2.), 
                                             quantization_interval=2*np.pi,
-                                            gabor=gabor,
                                             all_out=False,
                                             relu=True)
         self.filter = GaussianFilter(sidelen=sidelen)
