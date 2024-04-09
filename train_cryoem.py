@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('vol_path', type=os.path.abspath, help="Volume path")
     parser.add_argument('image_path', type=os.path.abspath, help="Particle images path")
     parser.add_argument('outdir', type=os.path.abspath, help="Output directory")
+    parser.add_argument('--checkpoint', type=str, default=None, help="Path to a checkpoint for resuming training or fine-tuning")
     parser.add_argument('--epochs', type=int, default=100, help="Number of epochs")
 
     parser.add_argument('--bacon-lr', type=float, default=1e-3, help="Learning rate of bacon")
@@ -88,6 +89,16 @@ if __name__ == "__main__":
     with open(os.path.join(args.outdir, "logs.txt"), "w") as f:
         f.write(log)
     print(log, end="")
+
+    if args.checkpoint is not None:
+            checkpoint = torch.load(args.checkpoint)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optim1.load_state_dict(checkpoint['optim1_state_dict'])
+            optim2.load_state_dict(checkpoint['optim2_state_dict'])
+            start_epoch = checkpoint['epoch']
+            print(f"Resuming training from epoch {start_epoch}")
+    else:
+        start_epoch = 0
     
     for epoch in range(args.epochs):
         avg_img_loss = 0
@@ -165,4 +176,13 @@ if __name__ == "__main__":
             f.write(log)
         if pose_lr_decay:
             scheduler.step()
+
+        checkpoint = { 
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optim1_state_dict': optim1.state_dict(),
+                'optim2_state_dict': optim2.state_dict(),
+            } 
+        torch.save(checkpoint, os.path.join(args.outdir, f'checkpoint_epoch_{epoch+1}.pt'))
+        print(f"Checkpoint saved at epoch {epoch + 1}")
     writer.close()
