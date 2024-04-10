@@ -87,9 +87,9 @@ if __name__ == "__main__":
     #pose_iterations = args.pose_iter
 
     pose_lr_decay = False
-    if args.pose_lr_decay != 1.:
-        pose_lr_decay = True
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optim2, milestones=train_schedule, gamma=args.pose_lr_decay)
+    #if args.pose_lr_decay != 1.:
+        #pose_lr_decay = True
+        #scheduler = torch.optim.lr_scheduler.MultiStepLR(optim2, milestones=train_schedule, gamma=args.pose_lr_decay)
 
     log = "Canonical Model Config:\n"
     log += "bacon lr {}, pose lr={}\n".format(args.bacon_lr, args.pose_lr)
@@ -173,6 +173,6 @@ if __name__ == "__main__":
         print(log, end="")
         with open(os.path.join(args.outdir, "logs.txt"), "a") as f:
             f.write(log)
-        if pose_lr_decay:
-            scheduler.step()
+        #if pose_lr_decay:
+            #scheduler.step()
     writer.close()
