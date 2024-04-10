@@ -13,7 +13,14 @@ from utils import fsc
 from load_data import ParticleImages
 from tqdm import tqdm
 from kornia.geometry.conversions import rotation_matrix_to_quaternion
+from tensorflow.keras.callbacks import ModelCheckpoint
 
+def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
+    torch.save(state, filename)
+
+def load_checkpoint(checkpoint, model, optimizer):
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -87,7 +94,7 @@ if __name__ == "__main__":
     vol_iterations = args.bacon_iter
     #pose_iterations = args.pose_iter
 
-    pose_lr_decay = False
+    #pose_lr_decay = False
     #if args.pose_lr_decay != 1.:
         #pose_lr_decay = True
         #scheduler = torch.optim.lr_scheduler.MultiStepLR(optim2, milestones=train_schedule, gamma=args.pose_lr_decay)
@@ -101,6 +108,7 @@ if __name__ == "__main__":
     print(log, end="")
 
     for epoch in range(args.epochs):
+        best_loss = float('inf')
         avg_img_loss = 0
         log = 'Epoch {}:\n'.format(epoch + 1)
         distances = []
@@ -174,6 +182,17 @@ if __name__ == "__main__":
         print(log, end="")
         with open(os.path.join(args.outdir, "logs.txt"), "a") as f:
             f.write(log)
+
+    val_loss = avg_img_loss
+    is_best = val_loss < best_loss
+    if is_best:
+        best_loss = val_loss
+        save_checkpoint({ 
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'optimizier': optim1.state_dict(),
+            'loss': best_loss,
+        }, filename = os.path.join(args.outdir, "best_checkpoint.pth.tar"))
         #if pose_lr_decay:
             #scheduler.step()
     writer.close()
