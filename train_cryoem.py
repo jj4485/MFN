@@ -13,7 +13,6 @@ from utils import fsc
 from load_data import ParticleImages
 from tqdm import tqdm
 from kornia.geometry.conversions import rotation_matrix_to_quaternion
-from tensorflow.keras.callbacks import ModelCheckpoint
 
 def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
     torch.save(state, filename)
