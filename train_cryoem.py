@@ -69,6 +69,7 @@ if __name__ == "__main__":
     print("Datatype of the poses array:", poses.dtype)
     print("First few items to inspect:", poses[:5])
     gt_rotations = torch.from_numpy(poses).float()
+    gt_q = rotation_matrix_to_quaternion(gt_rotations)
     model = AllModels(sidelen=sidelen, 
                         hidden_dim=args.bacon_hidden_dim, 
                         hidden_layers=args.bacon_hidden_layers,
