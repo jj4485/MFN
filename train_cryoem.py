@@ -54,7 +54,7 @@ if __name__ == "__main__":
     particle_images_dataset = ParticleImages(args.vol_path, args.image_path)
     apix = particle_images_dataset.apix
     sidelen = particle_images_dataset.sidelen
-    batch_size = 300
+    batch_size = 600
     particle_images = DataLoader(particle_images_dataset, batch_size=batch_size, shuffle=True)
 
     tensor_gt_rotations = torch.tensor(particle_images_dataset.rotations).float()
