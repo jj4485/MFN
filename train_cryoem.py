@@ -92,7 +92,7 @@ if __name__ == "__main__":
         #scheduler = torch.optim.lr_scheduler.MultiStepLR(optim2, milestones=train_schedule, gamma=args.pose_lr_decay)
 
     log = "Canonical Model Config:\n"
-    log += "bacon lr {}, pose lr={}\n".format(args.bacon_lr, args.pose_lr)
+    #log += "bacon lr {}, pose lr={}\n".format(args.bacon_lr, args.pose_lr)
     log += "hidden dim={}, layers={}\n".format(args.bacon_hidden_dim, args.bacon_hidden_layers)
     log += '-------------\n\n'
     with open(os.path.join(args.outdir, "logs.txt"), "w") as f:
