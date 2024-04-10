@@ -56,8 +56,8 @@ if __name__ == "__main__":
     batch_size = 300
     particle_images = DataLoader(particle_images_dataset, batch_size=batch_size, shuffle=True)
 
-    tensor_gt_rotations = torch.tensor(particle_images_dataset.rotations).float()
-    gt_q = rotation_matrix_to_quaternion(tensor_gt_rotations)
+    #tensor_gt_rotations = torch.tensor(particle_images_dataset.rotations).float()
+    #gt_q = rotation_matrix_to_quaternion(tensor_gt_rotations)
     g_dist = [np.pi/4, np.pi/2]
     data_directory = 'data'
     image_directory = 'images'
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                         hidden_dim=args.bacon_hidden_dim, 
                         hidden_layers=args.bacon_hidden_layers,
                         n_data=particle_images_dataset.n_projections,
-                        gt_rotations=tensor_gt_rotations,
+                        gt_rotations=gt_rotations,
                         g_dist=g_dist,
                         apix=apix)
     optim1 = torch.optim.Adam(lr=args.bacon_lr, params=list(model.model.parameters()))
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     model.to(device)
 
     vol_iterations = args.bacon_iter
-    pose_iterations = args.pose_iter
+    #pose_iterations = args.pose_iter
 
     pose_lr_decay = False
     if args.pose_lr_decay != 1.:
@@ -137,24 +137,24 @@ if __name__ == "__main__":
             model.module.setup_alternate(optimize="volume")
             for iteration in range(vol_iterations):
                 optim1.zero_grad(set_to_none=True)
-                optim2.zero_grad(set_to_none=True)
+                #optim2.zero_grad(set_to_none=True)
                 img_loss = model(gt_img, idx, ctf_params)
                 img_loss = img_loss.mean()
                 avg_img_loss += img_loss.item()
                 img_loss.backward()
                 optim1.step()
 
-            model.module.setup_alternate(optimize="poses")
-            for iteration in range(pose_iterations):
-                optim1.zero_grad(set_to_none=True) 
-                optim2.zero_grad(set_to_none=True)
-                img_loss = model(gt_img, idx, ctf_params)
-                img_loss = img_loss.mean()
-                avg_img_loss += img_loss.item()
-                img_loss.backward()
-                optim2.step()
-                model.module.apply_constraints(idx)
-            model.module.update_poses(idx)
+            #model.module.setup_alternate(optimize="poses")
+            #for iteration in range(pose_iterations):
+                #optim1.zero_grad(set_to_none=True) 
+                #optim2.zero_grad(set_to_none=True)
+                #img_loss = model(gt_img, idx, ctf_params)
+                #img_loss = img_loss.mean()
+                #avg_img_loss += img_loss.item()
+                #img_loss.backward()
+                #optim2.step()
+                #model.module.apply_constraints(idx)
+            #model.module.update_poses(idx)
 
         avg_img_loss /= len(particle_images)
         log += "Average image l2 loss = {:.5f}\n".format(avg_img_loss)
