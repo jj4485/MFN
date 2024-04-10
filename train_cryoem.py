@@ -20,20 +20,19 @@ if __name__ == "__main__":
     parser.add_argument('vol_path', type=os.path.abspath, help="Volume path")
     parser.add_argument('image_path', type=os.path.abspath, help="Particle images path")
     parser.add_argument('outdir', type=os.path.abspath, help="Output directory")
-    parser.add_argument('--checkpoint', type=str, default=None, help="Path to a checkpoint for resuming training or fine-tuning")
     parser.add_argument('--epochs', type=int, default=100, help="Number of epochs")
-    parser.add_argument('--accumulation_steps', type=int, default=4, help="Number of steps to accumulate gradients over")
+
     parser.add_argument('--bacon-lr', type=float, default=1e-3, help="Learning rate of bacon")
     parser.add_argument('--bacon-iter', type=int, default=5, help="Number of iterations updating the structure")
     parser.add_argument('--bacon-hidden-dim', type=int, default=128, help="Hidden dimension of coordinate network")
     parser.add_argument('--bacon-hidden-layers', type=int, default=3, help="Number of hidden layers of coordinate network")
 
-    parser.add_argument('--pose-lr', type=float, default=1e-2, help="Learning rate of poses optimizer")
-    parser.add_argument('--pose-beta1', type=float, default=0.9, help="Beta1 for adam optimizer of poses")
-    parser.add_argument('--pose-beta2', type=float, default=0.9, help="Beta2 for adam optimizer of poses")
-    parser.add_argument('--pose-lr-decay', type=float, default=1., help="If use piecewise decay for pose learning rate")
-    parser.add_argument('--pose-iter', type=int, default=20, help="Number of iterations updating poses")
-    
+    #parser.add_argument('--pose-lr', type=float, default=1e-2, help="Learning rate of poses optimizer")
+    #parser.add_argument('--pose-beta1', type=float, default=0.9, help="Beta1 for adam optimizer of poses")
+    #parser.add_argument('--pose-beta2', type=float, default=0.9, help="Beta2 for adam optimizer of poses")
+    #parser.add_argument('--pose-lr-decay', type=float, default=1., help="If use piecewise decay for pose learning rate")
+    #parser.add_argument('--pose-iter', type=int, default=20, help="Number of iterations updating poses")
+
     args = parser.parse_args()
 
     warnings.filterwarnings("ignore")
@@ -47,7 +46,7 @@ if __name__ == "__main__":
 
     # train_schedule = [15, 30] # pdb1ol5
     train_schedule = [25, 50] # pdb4ake
-    
+
     logs_path = args.outdir
     writer = SummaryWriter(os.path.join(logs_path, "summaries"))
 
@@ -60,6 +59,16 @@ if __name__ == "__main__":
     tensor_gt_rotations = torch.tensor(particle_images_dataset.rotations).float()
     gt_q = rotation_matrix_to_quaternion(tensor_gt_rotations)
     g_dist = [np.pi/4, np.pi/2]
+    data_directory = 'data'
+    image_directory = 'images'
+    subfolder = 'N50000_snr0.1_ctf'
+    filename = 'poses.npy'
+    file_path = os.path.join(data_directory, image_directory, subfolder, filename)
+    poses = np.load(file_path)
+    print("Shape of the poses array:", poses.shape)
+    print("Datatype of the poses array:", poses.dtype)
+    print("First few items to inspect:", poses[:5])
+    gt_rotations = torch.from_numpy(poses).float()
     model = AllModels(sidelen=sidelen, 
                         hidden_dim=args.bacon_hidden_dim, 
                         hidden_layers=args.bacon_hidden_layers,
@@ -68,15 +77,15 @@ if __name__ == "__main__":
                         g_dist=g_dist,
                         apix=apix)
     optim1 = torch.optim.Adam(lr=args.bacon_lr, params=list(model.model.parameters()))
-    optim2 = torch.optim.Adam(lr=args.pose_lr, betas=(args.pose_beta1, args.pose_beta2), 
-                                params=list(filter(lambda p: p.requires_grad, model.poses.parameters())))
-    
+    #optim2 = torch.optim.Adam(lr=args.pose_lr, betas=(args.pose_beta1, args.pose_beta2), 
+                                #params=list(filter(lambda p: p.requires_grad, model.poses.parameters())))
+
     model = nn.DataParallel(model)
     model.to(device)
 
     vol_iterations = args.bacon_iter
     pose_iterations = args.pose_iter
-    
+
     pose_lr_decay = False
     if args.pose_lr_decay != 1.:
         pose_lr_decay = True
@@ -90,18 +99,8 @@ if __name__ == "__main__":
         f.write(log)
     print(log, end="")
 
-    if args.checkpoint is not None:
-            checkpoint = torch.load(args.checkpoint)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optim1.load_state_dict(checkpoint['optim1_state_dict'])
-            optim2.load_state_dict(checkpoint['optim2_state_dict'])
-            start_epoch = checkpoint['epoch']
-            print(f"Resuming training from epoch {start_epoch}")
-    else:
-        start_epoch = 0
-    
-    accumulation_steps = args.accumulation_steps
     for epoch in range(args.epochs):
+        avg_img_loss = 0
         log = 'Epoch {}:\n'.format(epoch + 1)
         distances = []
         if (epoch + 1) in train_schedule:
@@ -124,7 +123,7 @@ if __name__ == "__main__":
             sample_est_rotations = est_q[tmp].cpu().numpy()[:10]
             sample_gt_rotations = gt_q[tmp].detach().cpu().numpy()[:10]
             np.savez(os.path.join(args.outdir, "sample_right_rotations.npz"), est_rot=sample_est_rotations, gt_rot=sample_gt_rotations)
-                
+
         writer.add_histogram("geodesic_distance", distances, epoch+1)
 
         for batch_n, (gt_img, ctf_params, idx) in tqdm(enumerate(particle_images), total=len(particle_images)):
@@ -134,7 +133,7 @@ if __name__ == "__main__":
                 ctf_params = ctf_params.to(device)
             else:
                 ctf_params = None
-            
+
             model.module.setup_alternate(optimize="volume")
             for iteration in range(vol_iterations):
                 optim1.zero_grad(set_to_none=True)
@@ -156,7 +155,7 @@ if __name__ == "__main__":
                 optim2.step()
                 model.module.apply_constraints(idx)
             model.module.update_poses(idx)
-        
+
         avg_img_loss /= len(particle_images)
         log += "Average image l2 loss = {:.5f}\n".format(avg_img_loss)
         epoch_logs_path = os.path.join(logs_path, 'epoch_{}'.format(epoch + 1))
@@ -176,13 +175,4 @@ if __name__ == "__main__":
             f.write(log)
         if pose_lr_decay:
             scheduler.step()
-
-        checkpoint = { 
-                'epoch': epoch + 1,
-                'model_state_dict': model.state_dict(),
-                'optim1_state_dict': optim1.state_dict(),
-                'optim2_state_dict': optim2.state_dict(),
-            } 
-        torch.save(checkpoint, os.path.join(args.outdir, f'checkpoint_epoch_{epoch+1}.pt'))
-        print(f"Checkpoint saved at epoch {epoch + 1}")
     writer.close()

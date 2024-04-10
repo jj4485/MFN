@@ -380,15 +380,10 @@ class AllModels(nn.Module):
                                             all_out=False,
                                             relu=True)
         self.filter = GaussianFilter(sidelen=sidelen)
-        data_directory = 'data'
-        image_directory = 'images'
-        subfolder = 'N50000_snr0.1_ctf'
-        filename = 'poses.npy'
-        file_path = os.path.join(data_directory, image_directory, subfolder, filename)
-        poses = np.load(file_path)
-        print("Shape of the poses array:", poses.shape)
-        print("Datatype of the poses array:", poses.dtype)
-        print("First few items to inspect:", poses[:5])
+        
+        #print("Shape of the poses array:", poses.shape)
+        #print("Datatype of the poses array:", poses.dtype)
+        #print("First few items to inspect:", poses[:5])
 
         self.poses = PoseModel(n_data=n_data, gt_rotations=gt_rotations, g_dist=g_dist)
         self.projector = RotateProject(sidelen=sidelen, apix=apix)
