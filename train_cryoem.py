@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument('outdir', type=os.path.abspath, help="Output directory")
     parser.add_argument('--checkpoint', type=str, default=None, help="Path to a checkpoint for resuming training or fine-tuning")
     parser.add_argument('--epochs', type=int, default=100, help="Number of epochs")
-
+    parser.add_argument('--accumulation_steps', type=int, default=4, help="Number of steps to accumulate gradients over")
     parser.add_argument('--bacon-lr', type=float, default=1e-3, help="Learning rate of bacon")
     parser.add_argument('--bacon-iter', type=int, default=5, help="Number of iterations updating the structure")
     parser.add_argument('--bacon-hidden-dim', type=int, default=128, help="Hidden dimension of coordinate network")
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     particle_images_dataset = ParticleImages(args.vol_path, args.image_path)
     apix = particle_images_dataset.apix
     sidelen = particle_images_dataset.sidelen
-    batch_size = 600
+    batch_size = 300
     particle_images = DataLoader(particle_images_dataset, batch_size=batch_size, shuffle=True)
 
     tensor_gt_rotations = torch.tensor(particle_images_dataset.rotations).float()
@@ -100,8 +100,8 @@ if __name__ == "__main__":
     else:
         start_epoch = 0
     
+    accumulation_steps = args.accumulation_steps
     for epoch in range(args.epochs):
-        avg_img_loss = 0
         log = 'Epoch {}:\n'.format(epoch + 1)
         distances = []
         if (epoch + 1) in train_schedule:
