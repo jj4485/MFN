@@ -57,6 +57,7 @@ def generate_data(path, n_projections=50000, snr=0.1, apply_ctf=True, batch_size
     vol, hdr = parse_mrc(os.path.join(path, 'volume.mrc'))
     apix = hdr.get_apix()
     sidelen = vol.shape[0]
+    print(sidelen)
     print('apix:', apix)
     print('volume size:', vol.shape)
     

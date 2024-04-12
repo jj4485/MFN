@@ -67,7 +67,7 @@ if __name__ == "__main__":
     g_dist = [np.pi/4, np.pi/2]
     data_directory = 'data'
     image_directory = 'images'
-    subfolder = 'N50000_snr0.1_ctf'
+    subfolder = 'N10000_snr1.0'
     filename = 'poses.npy'
     file_path = os.path.join(data_directory, image_directory, subfolder, filename)
     poses = np.load(file_path)
