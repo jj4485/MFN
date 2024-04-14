@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import argparse
 import os
 import warnings
+import pickle
 
 from torch.utils.tensorboard import SummaryWriter
 from modules import AllModels, FrequencyMarchingBACON
@@ -67,10 +68,11 @@ if __name__ == "__main__":
     g_dist = [np.pi/4, np.pi/2]
     data_directory = 'data'
     image_directory = 'images'
-    subfolder = 'N10000_snr1.0'
-    filename = 'poses.npy'
+    filename = 'poses.pkl'
     file_path = os.path.join(data_directory, image_directory, subfolder, filename)
-    poses = np.load(file_path)
+    with open(file_path, 'rb') as file:
+        poses = pickle.load(file)
+
     print("Shape of the poses array:", poses.shape)
     print("Datatype of the poses array:", poses.dtype)
     print("First few items to inspect:", poses[:5])
